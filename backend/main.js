@@ -1,6 +1,6 @@
 require('dotenv').config();
 const { Client } = require('pg');
-const { 
+const {
   queriesCreateTables,
   queryAviones,
   queryAerolineas,
@@ -16,30 +16,17 @@ const {
   insertQueryVuelos
 } = require('./sql');
 
-const createTables = async () => {
-  const configDestino = {
-    host: process.env.DB_DESTINO_HOST,
-    port: process.env.DB_DESTINO_PORT,
-    user: process.env.DB_DESTINO_USER,
-    password: process.env.DB_DESTINO_PASSWORD,
-    database: process.env.DB_DESTINO_DATABASE
-  };
-  const connectionDestino = new Client(configDestino);
-  await connectionDestino.connect();
+const createTables = async (connectionDestino) => {
   try {
     for (const query of queriesCreateTables) {
       await connectionDestino.query(query);
     }
   } catch (error) {
     console.error('❌ Error durante la creacion de tablas:', error);
-  } finally {
-    if (connectionDestino) await connectionDestino.end();
   }
 }
 
-async function migrateData() {
-  await createTables();
-
+export const migrateData = async (hostDestino, portDestino, userDestino, passwordDestino, databaseDestino) => {
   let connectionOrigen;
   let connectionDestino;
 
@@ -55,6 +42,20 @@ async function migrateData() {
     connectionOrigen = new Client(configOrigen);
     await connectionOrigen.connect();
     console.log('✅ Conectado a la base de datos de origen.');
+
+    // Conexión a la base de datos de destino (dbdestino)
+    const configDestino = {
+      host: hostDestino,
+      port: portDestino,
+      user: userDestino,
+      password: passwordDestino,
+      database: databaseDestino
+    };
+    connectionDestino = new Client(configDestino);
+    await connectionDestino.connect();
+    console.log('✅ Conectado a la base de datos de destino.');
+
+    await createTables(connectionDestino);
 
     // Obtenemos los datos de AVIONES
     const { rows: rowsAviones } = await connectionOrigen.query(queryAviones);
@@ -79,18 +80,6 @@ async function migrateData() {
     // Obtenemos los datos de VUELOS
     const { rows: rowsVuelos } = await connectionOrigen.query(queryVuelos);
     console.log(`🔎 Encontrados ${rowsVuelos.length} registros en Vuelos.`);
-
-    // Conexión a la base de datos de destino (dbdestino)
-  const configDestino = {
-    host: process.env.DB_DESTINO_HOST,
-    port: process.env.DB_DESTINO_PORT,
-    user: process.env.DB_DESTINO_USER,
-    password: process.env.DB_DESTINO_PASSWORD,
-    database: process.env.DB_DESTINO_DATABASE
-  };
-  const connectionDestino = new Client(configDestino);
-  await connectionDestino.connect();
-    console.log('✅ Conectado a la base de datos de destino.');
 
     for (const row of rowsAviones) {
       console.log(`🔄 Insertando AVIÓN: ${JSON.stringify(row)}`);
@@ -139,32 +128,42 @@ async function migrateData() {
     console.log('✅ Migración de datos completada exitosamente.');
 
   } catch (error) {
-    console.error('❌ Error durante la migración:', error);
+    throw new Error('❌ Error durante la migración:', error);
   } finally {
-    // Cerrar las conexiones
     if (connectionOrigen) await connectionOrigen.end();
     if (connectionDestino) await connectionDestino.end();
     console.log('🔌 Conexiones a la base de datos cerradas.');
   }
 }
 
-const getData = async (nombreTabla, conexion) => {
-
-  if(!conexion || !nombreTabla) {
-    console.error(`❌ Conexión no especificada para la tabla: ${nombreTabla}`);
-    return;
-  }
-
-  connectionDb = await mysql.createConnection({
-    host: conexion === "origen" ? process.env.DB_ORIGEN_HOST : process.env.DB_DESTINO_HOST,
-    user: conexion === "origen" ? process.env.DB_ORIGEN_USER : process.env.DB_DESTINO_USER,
-    password: conexion === "origen" ? process.env.DB_ORIGEN_PASSWORD : process.env.DB_DESTINO_PASSWORD,
-    database: conexion === "origen" ? process.env.DB_ORIGEN_DATABASE : process.env.DB_DESTINO_DATABASE
-  });
+export const getData = async (nombreTabla, conexion, hostDestino, portDestino, userDestino, passwordDestino, databaseDestino) => {
+  let connectionDb;
+  
+  console.log(`🔍 Obteniendo datos de la tabla: ${nombreTabla} desde la conexión: ${conexion}`);
 
   try {
-    const [rows] = await connectionDb.execute(`SELECT * FROM ${nombreTabla}`);
-    console.log(`🔍 Datos en la tabla ${nombreTabla} de la base de datos: ${JSON.stringify(rows)}`);
+    if (!conexion || !nombreTabla) {
+      console.error(`❌ Conexión no especificada para la tabla: ${nombreTabla}`);
+      throw new Error('Conexión o nombre de tabla no especificados');
+    }
+
+    if (conexion != "origen" && (!hostDestino || !portDestino || !userDestino || !passwordDestino || !databaseDestino)) {
+      console.error(`❌ Configuración de conexión no completa para la tabla: ${nombreTabla}`);
+      throw new Error('Configuración de conexión destino no completa');
+    }
+
+    const configDb = {
+      host: conexion === "origen" ? process.env.DB_ORIGEN_HOST : hostDestino,
+      user: conexion === "origen" ? process.env.DB_ORIGEN_USER : userDestino,
+      port: conexion === "origen" ? process.env.DB_ORIGEN_PORT : portDestino,
+      password: conexion === "origen" ? process.env.DB_ORIGEN_PASSWORD : passwordDestino,
+      database: conexion === "origen" ? process.env.DB_ORIGEN_DATABASE : databaseDestino
+    };
+
+    connectionDb = new Client(configDb);
+    await connectionDb.connect();
+
+    const {rows} = await connectionDb.query(`SELECT * FROM ${nombreTabla}`);
     return rows;
   } catch (error) {
     console.error(`❌ Error obteniendo data de la tabla: ${nombreTabla}`, error);
@@ -173,8 +172,3 @@ const getData = async (nombreTabla, conexion) => {
     if (connectionDb) await connectionDb.end();
   }
 };
-
-// Ejecutar la función principal
-migrateData();
-
-//getData("aviones", "origen");
