@@ -1,4 +1,3 @@
-import { NextRequest, NextResponse } from 'next/server';
 import { migrateData } from '../../../../backend/main';
 
 export async function GET(req: Request) {
@@ -23,8 +22,9 @@ export async function GET(req: Request) {
       try {
         await migrateData(host, port, user, password, database);
         controller.enqueue(encoder.encode(`event: end\ndata: done\n\n`));
-      } catch (err: any) {
-        controller.enqueue(encoder.encode(`event: error\ndata: ${err?.message || 'error'}\n\n`));
+      } catch (err) {
+        const errorMsg = err instanceof Error ? err.message : 'error';
+        controller.enqueue(encoder.encode(`event: error\ndata: ${errorMsg}\n\n`));
       } finally {
         console.log = originalLog;
         controller.close();
@@ -40,22 +40,3 @@ export async function GET(req: Request) {
     }
   });
 }
-/*
-export async function POST(req: NextRequest) {
-  const body = await req.json();
-  let logs: any = [];
-  // Redefinir console.log temporalmente para capturar los logs
-  const originalLog = console.log;
-  console.log = (msg, ...args) => {
-    logs.push(typeof msg === 'string' ? msg : JSON.stringify(msg));
-    if (args.length) logs.push(args.map(a => typeof a === 'string' ? a : JSON.stringify(a)).join(' '));
-    originalLog(msg, ...args);
-  };
-  try {
-    await migrateData(body.host, body.port, body.user, body.password, body.database);
-  } finally {
-    console.log = originalLog;
-  }
-  return NextResponse.json({ success: true, logs });
-}
-  */

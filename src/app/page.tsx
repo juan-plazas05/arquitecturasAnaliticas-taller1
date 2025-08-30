@@ -22,7 +22,8 @@ const destinoOptions = [
   { value: "Fact_vuelos", label: "Vuelos" },
 ];
 
-function DataTable({ data }: { data: any[] }) {
+type TableRow = Record<string, string | number | boolean | null>;
+function DataTable({ data }: { data: TableRow[] }) {
   const containerStyle = {
     maxHeight: '400px',
     minHeight: '400px',
@@ -38,7 +39,7 @@ function DataTable({ data }: { data: any[] }) {
       </div>
     );
   }
-  const headers = Object.keys(data[0]);
+  const headers = data && data.length > 0 ? Object.keys(data[0] as Record<string, unknown>) : [];
   return (
     <div className="w-full h-full" style={containerStyle}>
       <table className="w-full border border-gray-300 rounded-lg">
@@ -50,10 +51,10 @@ function DataTable({ data }: { data: any[] }) {
           </tr>
         </thead>
         <tbody>
-          {data.map((row: any, idx: number) => (
+          {data.map((row: Record<string, unknown>, idx: number) => (
             <tr key={idx} className="hover:bg-gray-50">
               {headers.map((h) => (
-                <td key={h} className="px-2 py-1 border-b text-lg text-gray-600 text-center">{row[h]}</td>
+                <td key={h} className="px-2 py-1 border-b text-lg text-gray-600 text-center">{row[h] as string}</td>
               ))}
             </tr>
           ))}
@@ -97,7 +98,7 @@ export default function Page() {
       setMigrationFinished(true);
       setMigrationError(false);
     });
-    eventSource.addEventListener('error', (event) => {
+    eventSource.addEventListener('error', () => {
       setMigrationLogs(logs => [...logs, 'Error en la migración']);
       eventSource.close();
       setMigrationFinished(true);
