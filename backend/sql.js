@@ -1,42 +1,28 @@
 export const queriesCreateTables = [
-  `
-      CREATE TABLE IF NOT EXISTS Dim_Aerolineas (
-        id_aerolinea     INT,
-        nombre_aerolinea VARCHAR(50),
-        PRIMARY KEY (id_aerolinea),
-        KEY idx_da_nombre (nombre_aerolinea)
-      )
-  `,
-  `
-      CREATE TABLE IF NOT EXISTS Dim_aviones  (
+  `CREATE TABLE IF NOT EXISTS Dim_Aerolineas (
+      id_aerolinea     INT,
+      nombre_aerolinea VARCHAR(50),
+      PRIMARY KEY (id_aerolinea)
+  )`,
+  `CREATE TABLE IF NOT EXISTS Dim_aviones  (
         id_avion     INT NOT NULL,
         nombre_avion VARCHAR(50) NOT NULL,
         modelo       VARCHAR(50) NOT NULL,
-        PRIMARY KEY (id_avion),
-        KEY idx_dav_modelo (modelo)
-      )
-  `,
-  `
-      CREATE TABLE IF NOT EXISTS Dim_usuarios (
+        PRIMARY KEY (id_avion)
+  )`,
+  `CREATE TABLE IF NOT EXISTS Dim_usuarios (
         id_usuario      INT NOT NULL,
         nombre_completo VARCHAR(120) NOT NULL,
-        PRIMARY KEY (id_usuario),
-        KEY idx_du_nombre (nombre_completo)
-      )
-  `,
-  `
-      CREATE TABLE IF NOT EXISTS Dim_aeropuertos (
+        PRIMARY KEY (id_usuario)
+  )`,
+  `CREATE TABLE IF NOT EXISTS Dim_aeropuertos (
         id_aeropuerto     INT NOT NULL, 
         nombre_aeropuerto VARCHAR(50) NOT NULL,
         ciudad            VARCHAR(50) NOT NULL,
         pais              VARCHAR(80) NULL,
-        PRIMARY KEY (id_aeropuerto),
-        KEY idx_daero_ciudad (ciudad),
-        KEY idx_daero_pais   (pais)
-      )
-  `,
-  `
-      CREATE TABLE IF NOT EXISTS Dim_tiempo (
+        PRIMARY KEY (id_aeropuerto)
+  )`,
+  `CREATE TABLE IF NOT EXISTS Dim_tiempo (
           id_fecha    INT NOT NULL,
           fecha       DATE,
           anio        INT,
@@ -46,17 +32,10 @@ export const queriesCreateTables = [
           semestre    INT,
           trimestre   INT,
           bimestre    INT,
-          PRIMARY KEY (id_fecha),
-          KEY idx_dt_anio (anio),
-          KEY idx_dt_anio_mes (anio, mes),
-          KEY idx_dt_trimestre (trimestre),
-          KEY idx_dt_semestre (semestre),
-          KEY idx_dt_bimestre (bimestre)
-      );
-  `,
-  `
-      CREATE TABLE  IF NOT EXISTS Fact_Vuelos (
-        id_vuelo              INT  AUTO_INCREMENT,
+          PRIMARY KEY (id_fecha)
+  );`,
+  `CREATE TABLE  IF NOT EXISTS Fact_Vuelos (
+        id_vuelo              SERIAL ,
         id_aerolinea          INT,
         id_fecha              INT,
         id_avion              INT ,
@@ -66,19 +45,23 @@ export const queriesCreateTables = [
         costo                 INT,
         duracion              INT,
         PRIMARY KEY (id_vuelo),
-        KEY idx_fv_destino_fecha   (id_aeropuerto_destino, id_fecha),
-        KEY idx_fv_aerolinea_fecha (id_aerolinea, id_fecha),
-        KEY idx_fv_avion_fecha     (id_avion, id_fecha),
-        KEY idx_fv_usuario_fecha   (id_usuario, id_fecha),
         CONSTRAINT fk_fv_aerolineas   FOREIGN KEY (id_aerolinea)          REFERENCES Dim_Aerolineas (id_aerolinea),
         CONSTRAINT fk_fv_tiempo       FOREIGN KEY (id_fecha)              REFERENCES Dim_tiempo     (id_fecha),
         CONSTRAINT fk_fv_aviones      FOREIGN KEY (id_avion)              REFERENCES Dim_aviones    (id_avion),
         CONSTRAINT fk_fv_usuarios     FOREIGN KEY (id_usuario)            REFERENCES Dim_usuarios   (id_usuario),
         CONSTRAINT fk_fv_aero_origen  FOREIGN KEY (id_aeropuerto_origen)  REFERENCES Dim_aeropuertos (id_aeropuerto),
         CONSTRAINT fk_fv_aero_destino FOREIGN KEY (id_aeropuerto_destino) REFERENCES Dim_aeropuertos (id_aeropuerto)
-      )
-  `
+  )`,
 ]
+
+export const queriesTruncateTables = [
+  `DROP TABLE IF EXISTS Fact_Vuelos`,
+  `DROP TABLE IF EXISTS Dim_Aerolineas`,
+  `DROP TABLE IF EXISTS Dim_aviones`,
+  `DROP TABLE IF EXISTS Dim_usuarios`,
+  `DROP TABLE IF EXISTS Dim_aeropuertos`,
+  `DROP TABLE IF EXISTS Dim_tiempo`,
+];
 
 export const queryAviones = `
       SELECT 
@@ -97,11 +80,11 @@ export const queryAerolineas = `
     `;
 
 export const queryUsuarios = `
-      SELECT 
+      SELECT
         cedula as id_usuario,
-        CONCAT(nombre," ",apellido) as nombre_completo
-      From usuarios 
-        `;
+        nombre || ' ' || apellido as nombre_completo
+      FROM usuarios;
+    `;
 
 export const queryAeropuertos = `
       SELECT 
@@ -134,31 +117,31 @@ export const queryVuelos = `
     `;
 
 export const insertQueryAviones = `
-      INSERT INTO Dim_aviones (id_avion, Nombre_avion, Modelo) 
-      VALUES (?, ?, ?)
+      INSERT INTO Dim_aviones (id_avion, nombre_avion, modelo) 
+      VALUES ($1, $2, $3)
   `;
 
 export const insertQueryAerolineas = `
-      INSERT INTO Dim_aerolineas (id_aerolinea, Nombre_aerolinea) 
-      VALUES (?, ?)
+      INSERT INTO Dim_aerolineas (id_aerolinea, nombre_aerolinea) 
+      VALUES ($1, $2)
   `;
 
 export const insertQueryUsuarios = `
       INSERT INTO Dim_usuarios (id_usuario, nombre_completo) 
-      VALUES (?, ?)
+      VALUES ($1, $2)
   `;
 
 export const insertQueryAeropuertos = `
       INSERT INTO Dim_aeropuertos (id_aeropuerto, nombre_aeropuerto, ciudad) 
-      VALUES (?, ?, ?)
+      VALUES ($1, $2, $3)
   `;
 
 export const insertQueryTiempo = `
       INSERT INTO Dim_tiempo ( id_fecha, fecha, anio, mes, dia, hora, semestre, trimestre, bimestre)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
   `;
 
 export const insertQueryVuelos = `
       INSERT INTO Fact_vuelos (id_aerolinea, id_fecha, id_aeropuerto_origen, id_aeropuerto_destino, id_usuario, costo) 
-      VALUES (?, ?, ?, ?, ?, ?)
+      VALUES ($1, $2, $3, $4, $5, $6)
   `;
