@@ -1,10 +1,4 @@
 export const queriesCreateTables = [
-  `DROP TABLE IF EXISTS Fact_Vuelos`,
-  `DROP TABLE IF EXISTS Dim_Aerolineas`,
-  `DROP TABLE IF EXISTS Dim_aviones`,
-  `DROP TABLE IF EXISTS Dim_usuarios`,
-  `DROP TABLE IF EXISTS Dim_aeropuertos`,
-  `DROP TABLE IF EXISTS Dim_tiempo`,
   `CREATE TABLE IF NOT EXISTS Dim_Aerolineas (
       id_aerolinea     INT,
       nombre_aerolinea VARCHAR(50),
@@ -59,6 +53,15 @@ export const queriesCreateTables = [
         CONSTRAINT fk_fv_aero_destino FOREIGN KEY (id_aeropuerto_destino) REFERENCES Dim_aeropuertos (id_aeropuerto)
   )`,
 ]
+
+export const queriesTruncateTables = [
+  `DROP TABLE IF EXISTS Fact_Vuelos`,
+  `DROP TABLE IF EXISTS Dim_Aerolineas`,
+  `DROP TABLE IF EXISTS Dim_aviones`,
+  `DROP TABLE IF EXISTS Dim_usuarios`,
+  `DROP TABLE IF EXISTS Dim_aeropuertos`,
+  `DROP TABLE IF EXISTS Dim_tiempo`,
+];
 
 export const queryAviones = `
       SELECT 

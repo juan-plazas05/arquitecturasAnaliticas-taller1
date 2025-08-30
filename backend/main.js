@@ -1,6 +1,7 @@
 require('dotenv').config();
 const { Client } = require('pg');
 const {
+  queriesTruncateTables,
   queriesCreateTables,
   queryAviones,
   queryAerolineas,
@@ -15,6 +16,27 @@ const {
   insertQueryTiempo,
   insertQueryVuelos
 } = require('./sql');
+
+export const truncateTables = async (connectionDestino, hostDestino, portDestino, userDestino, passwordDestino, databaseDestino) => {
+  let connectionDb = connectionDestino;
+  try {
+    if (!connectionDb) {
+      connectionDb = new Client({
+        host: hostDestino,
+        port: portDestino,
+        user: userDestino,
+        password: passwordDestino,
+        database: databaseDestino
+      });
+      await connectionDb.connect();
+    }
+    for (const query of queriesTruncateTables) {
+      await connectionDb.query(query);
+    }
+  } catch (error) {
+    console.error('❌ Error durante la creacion de tablas:', error);
+  }
+}
 
 const createTables = async (connectionDestino) => {
   try {
@@ -31,6 +53,11 @@ export const migrateData = async (hostDestino, portDestino, userDestino, passwor
   let connectionDestino;
 
   try {
+    if (!hostDestino || !portDestino || !userDestino || !passwordDestino || !databaseDestino) {
+      console.error(`❌ Configuración de conexión no completa para la tabla: ${nombreTabla}`);
+      throw new Error('Configuración de conexión destino no completa');
+    }
+
     // Conexión a la base de datos de origen (dborigen)
     const configOrigen = {
       host: process.env.DB_ORIGEN_HOST,
@@ -55,6 +82,7 @@ export const migrateData = async (hostDestino, portDestino, userDestino, passwor
     await connectionDestino.connect();
     console.log('✅ Conectado a la base de datos de destino.');
 
+    await truncateTables(connectionDestino);
     await createTables(connectionDestino);
 
     // Obtenemos los datos de AVIONES
@@ -138,7 +166,7 @@ export const migrateData = async (hostDestino, portDestino, userDestino, passwor
 
 export const getData = async (nombreTabla, conexion, hostDestino, portDestino, userDestino, passwordDestino, databaseDestino) => {
   let connectionDb;
-  
+
   console.log(`🔍 Obteniendo datos de la tabla: ${nombreTabla} desde la conexión: ${conexion}`);
 
   try {
@@ -163,7 +191,7 @@ export const getData = async (nombreTabla, conexion, hostDestino, portDestino, u
     connectionDb = new Client(configDb);
     await connectionDb.connect();
 
-    const {rows} = await connectionDb.query(`SELECT * FROM ${nombreTabla}`);
+    const { rows } = await connectionDb.query(`SELECT * FROM ${nombreTabla}`);
     return rows;
   } catch (error) {
     console.error(`❌ Error obteniendo data de la tabla: ${nombreTabla}`, error);
