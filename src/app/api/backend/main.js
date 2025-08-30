@@ -1,6 +1,6 @@
-require('dotenv').config();
-const { Client } = require('pg');
-const {
+import 'dotenv/config';
+import { Client } from 'pg';
+import {
   queriesTruncateTables,
   queriesCreateTables,
   queryAviones,
@@ -15,7 +15,7 @@ const {
   insertQueryAeropuertos,
   insertQueryTiempo,
   insertQueryVuelos
-} = require('./sql');
+} from './sql';
 
 export const truncateTables = async (connectionDestino, hostDestino, portDestino, userDestino, passwordDestino, databaseDestino) => {
   let connectionDb = connectionDestino;

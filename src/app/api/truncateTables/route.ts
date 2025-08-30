@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { truncateTables } from '../../../../backend/main';
+import { truncateTables } from '../backend/main';
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
