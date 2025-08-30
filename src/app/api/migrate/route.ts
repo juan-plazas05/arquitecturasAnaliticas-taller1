@@ -1,4 +1,4 @@
-import { migrateData } from '../../../../backend/main';
+import { migrateData } from '../backend/main';
 
 export async function GET(req: Request) {
   const url = new URL(req.url);

@@ -7,7 +7,7 @@ const origenOptions = [
   { value: "aeropuertos", label: "Aeropuertos" },
   { value: "aviones", label: "Aviones" },
   { value: "ciudades", label: "Ciudades" },
-  { value: "itinerarios", label: "itinerarios" },
+  { value: "itinerarios", label: "Itinerarios" },
   { value: "modelos", label: "Modelos" },
   { value: "usuarios", label: "Usuarios" },
   { value: "vuelos", label: "Vuelos" },
