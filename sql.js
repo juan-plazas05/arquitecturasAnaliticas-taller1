@@ -10,20 +10,17 @@ export const queriesCreateTables = [
       nombre_aerolinea VARCHAR(50),
       PRIMARY KEY (id_aerolinea)
   )`,
-  `CREATE INDEX idx_da_nombre ON Dim_Aerolineas (nombre_aerolinea)`,
   `CREATE TABLE IF NOT EXISTS Dim_aviones  (
         id_avion     INT NOT NULL,
         nombre_avion VARCHAR(50) NOT NULL,
         modelo       VARCHAR(50) NOT NULL,
         PRIMARY KEY (id_avion)
   )`,
-  `CREATE INDEX idx_dav_modelo ON Dim_aviones (modelo)`,
   `CREATE TABLE IF NOT EXISTS Dim_usuarios (
         id_usuario      INT NOT NULL,
         nombre_completo VARCHAR(120) NOT NULL,
         PRIMARY KEY (id_usuario)
   )`,
-  `CREATE INDEX idx_du_nombre ON Dim_usuarios (nombre_completo)`,
   `CREATE TABLE IF NOT EXISTS Dim_aeropuertos (
         id_aeropuerto     INT NOT NULL, 
         nombre_aeropuerto VARCHAR(50) NOT NULL,
@@ -31,8 +28,6 @@ export const queriesCreateTables = [
         pais              VARCHAR(80) NULL,
         PRIMARY KEY (id_aeropuerto)
   )`,
-  `CREATE INDEX idx_daero_ciudad ON Dim_aeropuertos (ciudad)`,
-  `CREATE INDEX idx_daero_pais ON Dim_aeropuertos (pais)`,
   `CREATE TABLE IF NOT EXISTS Dim_tiempo (
           id_fecha    INT NOT NULL,
           fecha       DATE,
@@ -45,13 +40,6 @@ export const queriesCreateTables = [
           bimestre    INT,
           PRIMARY KEY (id_fecha)
   );`,
-  `CREATE INDEX idx_dt_anio ON Dim_tiempo (anio)`,
-  `CREATE INDEX idx_dt_mes ON Dim_tiempo (mes)`,
-  `CREATE INDEX idx_dt_dia ON Dim_tiempo (dia)`,
-  `CREATE INDEX idx_dt_hora ON Dim_tiempo (hora)`,
-  `CREATE INDEX idx_dt_semestre ON Dim_tiempo (semestre)`,
-  `CREATE INDEX idx_dt_trimestre ON Dim_tiempo (trimestre)`,
-  `CREATE INDEX idx_dt_bimestre ON Dim_tiempo (bimestre)`,
   `CREATE TABLE  IF NOT EXISTS Fact_Vuelos (
         id_vuelo              SERIAL ,
         id_aerolinea          INT,
@@ -70,10 +58,6 @@ export const queriesCreateTables = [
         CONSTRAINT fk_fv_aero_origen  FOREIGN KEY (id_aeropuerto_origen)  REFERENCES Dim_aeropuertos (id_aeropuerto),
         CONSTRAINT fk_fv_aero_destino FOREIGN KEY (id_aeropuerto_destino) REFERENCES Dim_aeropuertos (id_aeropuerto)
   )`,
-  `CREATE INDEX idx_fv_destino_fecha ON Fact_Vuelos (id_aeropuerto_destino, id_fecha)`,
-  `CREATE INDEX idx_fv_aerolinea_fecha ON Fact_Vuelos (id_aerolinea, id_fecha)`,
-  `CREATE INDEX idx_fv_avion_fecha ON Fact_Vuelos (id_avion, id_fecha)`,
-  `CREATE INDEX idx_fv_usuario_fecha ON Fact_Vuelos (id_usuario, id_fecha)`
 ]
 
 export const queryAviones = `
