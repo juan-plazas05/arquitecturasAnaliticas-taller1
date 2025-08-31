@@ -58,7 +58,10 @@ export const migrateData = async (hostDestino, portDestino, userDestino, passwor
       port: process.env.DB_ORIGEN_PORT,
       user: process.env.DB_ORIGEN_USER,
       password: process.env.DB_ORIGEN_PASSWORD,
-      database: process.env.DB_ORIGEN_DATABASE
+      database: process.env.DB_ORIGEN_DATABASE,
+      ssl: {
+        rejectUnauthorized: false
+      }
     };
     console.log('configOrigen: ', configOrigen);
     connectionOrigen = new Client(configOrigen);
@@ -71,7 +74,10 @@ export const migrateData = async (hostDestino, portDestino, userDestino, passwor
       port: portDestino,
       user: userDestino,
       password: passwordDestino,
-      database: databaseDestino
+      database: databaseDestino,
+      ssl: {
+        rejectUnauthorized: false
+      }
     };
     console.log('configDestino: ', configDestino);
     connectionDestino = new Client(configDestino);
@@ -146,13 +152,13 @@ export const migrateData = async (hostDestino, portDestino, userDestino, passwor
     for (const row of rowsVuelos) {
       console.log(`🔄 Insertando VUELO: ${JSON.stringify(row)}`);
       const values = [
-        row.id_aerolinea, 
-        row.id_avion, 
-        row.id_fecha, 
-        row.id_aeropuerto_origen, 
-        row.id_aeropuerto_destino, 
-        row.id_usuario, 
-        row.costo, 
+        row.id_aerolinea,
+        row.id_avion,
+        row.id_fecha,
+        row.id_aeropuerto_origen,
+        row.id_aeropuerto_destino,
+        row.id_usuario,
+        row.costo,
         parseInt(row.duracion)
       ];
       await connectionDestino.query(insertQueryVuelos, values);
@@ -191,7 +197,10 @@ export const getData = async (nombreTabla, conexion, hostDestino, portDestino, u
       user: conexion === "origen" ? process.env.DB_ORIGEN_USER : userDestino,
       port: conexion === "origen" ? process.env.DB_ORIGEN_PORT : portDestino,
       password: conexion === "origen" ? process.env.DB_ORIGEN_PASSWORD : passwordDestino,
-      database: conexion === "origen" ? process.env.DB_ORIGEN_DATABASE : databaseDestino
+      database: conexion === "origen" ? process.env.DB_ORIGEN_DATABASE : databaseDestino,
+      ssl: {
+        rejectUnauthorized: false
+      }
     };
 
     connectionDb = new Client(configDb);
@@ -221,7 +230,10 @@ export const getAnswers = async (hostDestino, portDestino, userDestino, password
       user: userDestino,
       port: portDestino,
       password: passwordDestino,
-      database: databaseDestino
+      database: databaseDestino,
+      ssl: {
+        rejectUnauthorized: false
+      }
     };
 
     connectionDb = new Client(configDb);
