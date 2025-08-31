@@ -14,7 +14,11 @@ import {
   insertQueryUsuarios,
   insertQueryAeropuertos,
   insertQueryTiempo,
-  insertQueryVuelos
+  insertQueryVuelos,
+  getMayorNumeroDeVuelos,
+  getTotalDineroPrimerSemestre,
+  getModeloMasVuelos,
+  getTotalUsuariosPorCiudad
 } from './sql';
 
 export const truncateTables = async (connectionDestino, hostDestino, portDestino, userDestino, passwordDestino, databaseDestino) => {
@@ -31,6 +35,7 @@ export const truncateTables = async (connectionDestino, hostDestino, portDestino
       await connectionDb.connect();
     }
     for (const query of queriesTruncateTables) {
+      console.log(`🔄 Ejecutando consulta de truncado: ${query.split('IF EXISTS ')[1]}`);
       await connectionDb.query(query);
     }
   } catch (error) {
@@ -125,7 +130,7 @@ export const migrateData = async (hostDestino, portDestino, userDestino, passwor
 
     for (const row of rowsUsuarios) {
       console.log(`🔄 Insertando USUARIO: ${JSON.stringify(row)}`);
-      const values = [row.id_usuario, row.nombre_completo];
+      const values = [row.id_usuario, row.nombre_completo, row.ciudad];
       await connectionDestino.query(insertQueryUsuarios, values);
     }
 
@@ -151,13 +156,23 @@ export const migrateData = async (hostDestino, portDestino, userDestino, passwor
 
     for (const row of rowsVuelos) {
       console.log(`🔄 Insertando VUELO: ${JSON.stringify(row)}`);
-      const values = [row.id_aerolinea, row.id_fecha, row.id_aeropuerto_origen, row.id_aeropuerto_destino, row.id_usuario, row.costo];
+      const values = [
+        row.id_aerolinea, 
+        row.id_avion, 
+        row.id_fecha, 
+        row.id_aeropuerto_origen, 
+        row.id_aeropuerto_destino, 
+        row.id_usuario, 
+        row.costo, 
+        parseInt(row.duracion)
+      ];
       await connectionDestino.query(insertQueryVuelos, values);
     }
 
     console.log('✅ Migración de datos completada exitosamente.');
 
   } catch (error) {
+    console.error('❌ Error durante la migración:', error);
     throw new Error('❌ Error durante la migración:', error);
   } finally {
     if (connectionOrigen) await connectionOrigen.end();
@@ -197,6 +212,49 @@ export const getData = async (nombreTabla, conexion, hostDestino, portDestino, u
     return rows;
   } catch (error) {
     console.error(`❌ Error obteniendo data de la tabla: ${nombreTabla}`, error);
+  } finally {
+    // Cerrar las conexiones
+    if (connectionDb) await connectionDb.end();
+  }
+};
+
+export const getAnswers = async (hostDestino, portDestino, userDestino, passwordDestino, databaseDestino) => {
+  let connectionDb;
+
+  try {
+    if (!hostDestino || !portDestino || !userDestino || !passwordDestino || !databaseDestino) {
+      console.error(`❌ Configuración de conexión no completa para la tabla: ${nombreTabla}`);
+      throw new Error('Configuración de conexión destino no completa');
+    }
+
+    const configDb = {
+      host: hostDestino,
+      user: userDestino,
+      port: portDestino,
+      password: passwordDestino,
+      database: databaseDestino
+    };
+
+    connectionDb = new Client(configDb);
+    await connectionDb.connect();
+
+    console.log(`🔍 Obteniendo datos de la consulta rowsMayorNumeroVuelos`);
+    const { rows: rowsMayorNumeroVuelos } = await connectionDb.query(getMayorNumeroDeVuelos);
+    console.log(`🔍 Obteniendo datos de la consulta rowsTotalDineroPrimerSemestre`);
+    const { rows: rowsTotalDineroPrimerSemestre } = await connectionDb.query(getTotalDineroPrimerSemestre);
+    console.log(`🔍 Obteniendo datos de la consulta rowsModeloMasVuelos`);
+    const { rows: rowsModeloMasVuelos } = await connectionDb.query(getModeloMasVuelos);
+    console.log(`🔍 Obteniendo datos de la consulta rowsTotalUsuariosPorCiudad`);
+    const { rows: rowsTotalUsuariosPorCiudad } = await connectionDb.query(getTotalUsuariosPorCiudad);
+
+    return {
+      rowsMayorNumeroVuelos,
+      rowsTotalDineroPrimerSemestre,
+      rowsModeloMasVuelos,
+      rowsTotalUsuariosPorCiudad
+    };
+  } catch (error) {
+    console.error(`❌ Error obteniendo data de las consultas:`, error);
   } finally {
     // Cerrar las conexiones
     if (connectionDb) await connectionDb.end();

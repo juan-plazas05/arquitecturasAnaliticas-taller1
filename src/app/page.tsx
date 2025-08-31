@@ -1,5 +1,16 @@
 "use client"
 import React, { useState } from "react";
+import { Bar } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 const origenOptions = [
   { value: "", label: "Seleccione una opcion" },
@@ -64,12 +75,74 @@ function DataTable({ data }: { data: TableRow[] }) {
   );
 }
 
+type ConsultaCellProps = {
+  title: string;
+  data: any[];
+  yearKey?: string;
+  columns: { key: string; label: string }[];
+  chartX: string;
+  chartY: string;
+  yearOptions: number[];
+  kpi?: (year: number, filtered: any[]) => React.ReactNode;
+};
+
+function ConsultaCell({ title, data, yearKey = 'anio', columns, chartX, chartY, yearOptions, kpi }: ConsultaCellProps) {
+  const [selectedYear, setSelectedYear] = useState(yearOptions[0]);
+  // Convertir valores numéricos string a number para gráficas
+  const filtered = data.filter((row) => row[yearKey] === selectedYear);
+  const sorted = [...filtered].sort((a, b) => Number(b[chartY] ?? 0) - Number(a[chartY] ?? 0));
+  const chartData = {
+    labels: sorted.map((row) => row[chartX]),
+    datasets: [
+      {
+        label: chartY,
+        data: sorted.map((row) => Number(row[chartY])),
+        backgroundColor: 'rgba(37, 99, 235, 0.7)',
+      },
+    ],
+  };
+  return (
+    <div className="bg-white rounded-lg shadow p-4 flex flex-col gap-2 min-w-0 h-[630px]">
+      <h4 className="text-lg font-bold mb-2 text-gray-700">{title}</h4>
+      {kpi && (
+        <div className="mb-2 p-3 rounded-lg bg-gradient-to-r from-blue-500 to-blue-700 text-white text-center shadow-lg">
+          {kpi(selectedYear, filtered)}
+        </div>
+      )}
+      <select value={selectedYear} onChange={e => setSelectedYear(Number(e.target.value))} className="mb-2 px-3 py-2 border rounded focus:outline-none focus:ring w-full">
+        {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
+      </select>
+      <div className="overflow-auto max-h-80">
+        <table className="w-full border border-gray-300 rounded-lg text-xs">
+          <thead className="bg-gray-100">
+            <tr>
+              {columns.map((col) => <th key={col.key} className="px-2 py-1 border-b font-semibold text-gray-700 text-center">{col.label}</th>)}
+            </tr>
+          </thead>
+          <tbody>
+            {sorted.map((row, idx) => (
+              <tr key={idx} className="hover:bg-gray-50">
+                {columns.map((col) => <td key={col.key} className="px-2 py-1 border-b text-gray-600 text-center">{row[col.key]}</td>)}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="flex-1 flex items-center justify-center">
+        <div className="w-full h-[270px]">
+          <Bar data={chartData} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Page() {
   const [fields, setFields] = useState({
-    host: "db.spauqplsifsswlcfnsti.supabase.co",
+    host: "db.lxuwtifutoqlcdkrzbpk.supabase.co",
     port: "5432",
     user: "postgres",
-    password: "TallerArqui1",
+    password: "tallerarqui1",
     database: "postgres"
   });
   const [loading, setLoading] = useState(false);
@@ -81,6 +154,39 @@ export default function Page() {
   const [destinoTable, setDestinoTable] = useState("");
   const [origenData, setOrigenData] = useState([]);
   const [destinoData, setDestinoData] = useState([]);
+  const [consultasLoading, setConsultasLoading] = useState(false);
+  const [consultasError, setConsultasError] = useState("");
+  type ConsultasDataType = {
+    rowsMayorNumeroVuelos: any[];
+    rowsTotalDineroPrimerSemestre: any[];
+    rowsModeloMasVuelos: any[];
+    rowsTotalUsuariosPorCiudad: any[];
+  } | null;
+  const [consultasData, setConsultasData] = useState<ConsultasDataType>(null);
+  // Validar datos de la DB destino
+  const validateDbFields = () => {
+    return fields.host && fields.port && fields.user && fields.password && fields.database;
+  };
+
+  // Consultas
+  const handleConsultas = async () => {
+    setConsultasError("");
+    if (!validateDbFields()) {
+      setConsultasError("Por favor ingrese todos los datos de la DB destino.");
+      return;
+    }
+    setConsultasLoading(true);
+    try {
+      const params = new URLSearchParams(fields).toString();
+      const res = await fetch(`/api/getAnswers?${params}`);
+      const data = await res.json();
+      setConsultasData(data);
+    } catch (err) {
+      setConsultasError("Error al consultar los datos.");
+    } finally {
+      setConsultasLoading(false);
+    }
+  };
 
   // Llama a la API backend que expone migrateData de main.js
   const handleConfirm = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -145,6 +251,10 @@ export default function Page() {
     }
   };
 
+  // ...existing code...
+  // Años disponibles (ajusta si hay más años)
+  const yearOptions = [2019, 2020];
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center p-8 relative">
       {loading && (
@@ -190,8 +300,8 @@ export default function Page() {
           </div>
         </div>
       )}
-      <div className="w-full flex flex-row gap-8">
-        <form onSubmit={handleConfirm} className="flex-1 max-w-xl bg-white rounded-xl shadow-lg p-8 flex flex-col justify-center">
+  <div className="w-full flex flex-row gap-8">
+  <form onSubmit={handleConfirm} className="flex-1 max-w-xl min-w-[400px] bg-white rounded-xl shadow-lg p-8 flex flex-col justify-center">
           <div className="mb-4 text-yellow-700 bg-yellow-100 border border-yellow-300 rounded p-2 text-sm">
             <strong>Advertencia:</strong> La base de datos destino debe ser <span className="font-bold">PostgreSQL</span>.<br />
             <span className="block mt-2">Los datos de inicio son de una base de datos para <span className="font-bold">fines académicos</span>, al igual que la base de datos de origen.</span>
@@ -205,9 +315,18 @@ export default function Page() {
             <input name="database" placeholder="Base de datos" value={fields.database} onChange={e => setFields(f => ({ ...f, database: e.target.value }))} className="w-full mb-4 px-3 py-2 border rounded focus:outline-none focus:ring col-span-2" />
           </div>
           <button type="submit" className="w-full py-2 mt-4 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700 transition">Confirmar</button>
+          <button
+            type="button"
+            className="w-full py-2 mt-2 bg-green-600 text-white font-semibold rounded hover:bg-green-700 transition"
+            onClick={handleConsultas}
+            disabled={consultasLoading}
+          >
+            {consultasLoading ? "Consultando..." : "Consultas"}
+          </button>
+          {consultasError && <div className="mt-2 text-red-600 text-sm">{consultasError}</div>}
         </form>
-        <div className="flex-1 flex gap-8 justify-center items-start">
-          <div className="flex-1 bg-white rounded-lg shadow p-4 flex flex-col" style={{ minWidth: 0 }}>
+  <div className="flex-1 flex gap-8 justify-center items-start">
+          <div className="flex-1 bg-white rounded-lg shadow p-4 flex flex-col min-w-[400px] max-w-[500px]" style={{ minWidth: 0 }}>
             <h3 className="text-lg font-bold mb-2 text-gray-700">DB Origen</h3>
             <select value={origenTable} onChange={handleOrigenChange} className="w-full mb-2 px-3 py-2 border rounded focus:outline-none focus:ring">
               {origenOptions.map(opt => (
@@ -218,7 +337,7 @@ export default function Page() {
               <DataTable data={origenData} />
             </div>
           </div>
-          <div className="flex-1 bg-white rounded-lg shadow p-4 flex flex-col" style={{ minWidth: 0 }}>
+          <div className="flex-1 bg-white rounded-lg shadow p-4 flex flex-col min-w-[400px] max-w-[500px]" style={{ minWidth: 0 }}>
             <h3 className="text-lg font-bold mb-2 text-gray-700">DB Destino</h3>
             <select value={destinoTable} onChange={handleDestinoChange} className="w-full mb-2 px-3 py-2 border rounded focus:outline-none focus:ring">
               {destinoOptions.map(opt => (
@@ -231,6 +350,69 @@ export default function Page() {
           </div>
         </div>
       </div>
+      {/* Cuadricula de consultas */}
+      {consultasData && (
+        <div className="w-full grid grid-cols-2 grid-rows-2 gap-6 mt-8">
+          <ConsultaCell
+            title="Mayor Número de Vuelos"
+            data={consultasData.rowsMayorNumeroVuelos || []}
+            yearKey="anio"
+            columns={[{ key: "nombre_aerolinea", label: "Aerolinea" }, { key: "anio", label: "Año" }, { key: "total_vuelos", label: "Total Vuelos" }, { key: "ranking", label: "Ranking" }]}
+            chartX="nombre_aerolinea"
+            chartY="total_vuelos"
+            yearOptions={yearOptions}
+            kpi={(year, filtered) => {
+              const top = filtered.find(r => r.ranking === "1");
+              return top
+                ? <span className="text-xl font-bold">¿Cuál aerolínea realizó el mayor número de vuelos a la ciudad de Roma en el año {year}? <br /><span className="underline">{top.nombre_aerolinea}</span> con <span className="underline">{top.total_vuelos}</span> vuelos.</span>
+                : <span className="text-lg">No hay datos para el año {year}.</span>;
+            }}
+          />
+          <ConsultaCell
+            title="Total Dinero Primer Semestre"
+            data={consultasData.rowsTotalDineroPrimerSemestre || []}
+            yearKey="anio"
+            columns={[{ key: "nombre_aerolinea", label: "Aerolinea" }, { key: "anio", label: "Año" }, { key: "total_recaudado", label: "Total Recaudado" }]}
+            chartX="nombre_aerolinea"
+            chartY="total_recaudado"
+            yearOptions={yearOptions}
+            kpi={(year, filtered) => {
+              const total = filtered.reduce((acc, r) => acc + Number(r.total_recaudado), 0);
+              return <span className="text-xl font-bold">Total de dinero recaudado por vuelos de todas las aerolíneas en el primer semestre del año {year}: <br /><span className="underline">${total.toLocaleString()}</span></span>;
+            }}
+          />
+          <ConsultaCell
+            title="Modelo con Más Vuelos"
+            data={consultasData.rowsModeloMasVuelos || []}
+            yearKey="anio"
+            columns={[{ key: "modelo", label: "Modelo" }, { key: "anio", label: "Año" }, { key: "total_vuelos", label: "Total Vuelos" }]}
+            chartX="modelo"
+            chartY="total_vuelos"
+            yearOptions={yearOptions}
+            kpi={(year, filtered) => {
+              const top = filtered.reduce((max, r) => Number(r.total_vuelos) > Number(max.total_vuelos) ? r : max, filtered[0] || { modelo: '', total_vuelos: 0 });
+              return top && top.modelo
+                ? <span className="text-xl font-bold">¿Cuál modelo de avión realizó el mayor número de vuelos en el año {year}? <br /><span className="underline">{top.modelo}</span> con <span className="underline">{top.total_vuelos}</span> vuelos.</span>
+                : <span className="text-lg">No hay datos para el año {year}.</span>;
+            }}
+          />
+          <ConsultaCell
+            title="Total Usuarios por Ciudad"
+            data={consultasData.rowsTotalUsuariosPorCiudad || []}
+            yearKey="anio"
+            columns={[{ key: "ciudad", label: "Ciudad" }, { key: "anio", label: "Año" }, { key: "total_vuelos", label: "Total Vuelos" }]}
+            chartX="ciudad"
+            chartY="total_vuelos"
+            yearOptions={yearOptions}
+            kpi={(year, filtered) => {
+              const top = filtered.reduce((max, r) => Number(r.total_vuelos) > Number(max.total_vuelos) ? r : max, filtered[0] || { ciudad: '', total_vuelos: 0 });
+              return top && top.ciudad
+                ? <span className="text-xl font-bold">¿Cuál fue la ciudad cuyos habitantes viajaron más en el año {year}? <br /><span className="underline">{top.ciudad}</span> con <span className="underline">{top.total_vuelos}</span> vuelos.</span>
+                : <span className="text-lg">No hay datos para el año {year}.</span>;
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }
