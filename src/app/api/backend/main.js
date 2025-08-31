@@ -210,6 +210,7 @@ export const getData = async (nombreTabla, conexion, hostDestino, portDestino, u
     return rows;
   } catch (error) {
     console.error(`❌ Error obteniendo data de la tabla: ${nombreTabla}`, error);
+    throw new Error(`❌ Error obteniendo data de la tabla: ${nombreTabla}`, error);
   } finally {
     // Cerrar las conexiones
     if (connectionDb) await connectionDb.end();
@@ -256,6 +257,7 @@ export const getAnswers = async (hostDestino, portDestino, userDestino, password
     };
   } catch (error) {
     console.error(`❌ Error obteniendo data de las consultas:`, error);
+    throw new Error(`❌ Error obteniendo data de las consultas:`, error);
   } finally {
     // Cerrar las conexiones
     if (connectionDb) await connectionDb.end();
