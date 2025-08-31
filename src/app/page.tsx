@@ -139,11 +139,11 @@ function ConsultaCell({ title, data, yearKey = 'anio', columns, chartX, chartY, 
 
 export default function Page() {
   const [fields, setFields] = useState({
-    host: "db.lxuwtifutoqlcdkrzbpk.supabase.co",
+    host: "ep-shiny-dream-adhs3fgy-pooler.c-2.us-east-1.aws.neon.tech",
     port: "5432",
-    user: "postgres",
-    password: "tallerarqui1",
-    database: "postgres"
+    user: "neondb_owner",
+    password: "npg_cP9QCYB8SeGk",
+    database: "neondb"
   });
   const [loading, setLoading] = useState(false);
   const [migrationLogs, setMigrationLogs] = useState<string[]>([]);
