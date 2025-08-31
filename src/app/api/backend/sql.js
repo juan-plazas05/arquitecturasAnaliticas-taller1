@@ -20,7 +20,6 @@ export const queriesCreateTables = [
         id_aeropuerto     INT NOT NULL, 
         nombre_aeropuerto VARCHAR(50) NOT NULL,
         ciudad            VARCHAR(50) NOT NULL,
-        pais              VARCHAR(80) NULL,
         PRIMARY KEY (id_aeropuerto)
   )`,
   `CREATE TABLE IF NOT EXISTS Dim_tiempo (
