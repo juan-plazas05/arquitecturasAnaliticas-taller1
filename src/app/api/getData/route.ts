@@ -10,6 +10,10 @@ export async function GET(req: NextRequest) {
   const password = searchParams.get('password');
   const database = searchParams.get('database');
   const conexion = searchParams.get('conexion');
-  const data = await getData(table, conexion, host, port, user, password, database);
-  return NextResponse.json(data);
+  try {
+    const data = await getData(table, conexion, host, port, user, password, database);
+    return NextResponse.json(data ?? []);
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Error desconocido' }, { status: 500 });
+  }
 }

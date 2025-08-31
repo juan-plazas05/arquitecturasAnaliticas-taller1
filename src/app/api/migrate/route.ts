@@ -1,3 +1,4 @@
+import { NextResponse } from 'next/server';
 import { migrateData } from '../backend/main';
 
 export async function GET(req: Request) {
@@ -22,9 +23,11 @@ export async function GET(req: Request) {
       try {
         await migrateData(host, port, user, password, database);
         controller.enqueue(encoder.encode(`event: end\ndata: done\n\n`));
+        return NextResponse.json(200);
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : 'error';
         controller.enqueue(encoder.encode(`event: error\ndata: ${errorMsg}\n\n`));
+        return NextResponse.json({ error: errorMsg }, { status: 500 });
       } finally {
         console.log = originalLog;
         controller.close();

@@ -66,6 +66,7 @@ export const migrateData = async (hostDestino, portDestino, userDestino, passwor
       password: process.env.DB_ORIGEN_PASSWORD,
       database: process.env.DB_ORIGEN_DATABASE
     };
+    console.log('configOrigen: ', configOrigen);
     connectionOrigen = new Client(configOrigen);
     await connectionOrigen.connect();
     console.log('✅ Conectado a la base de datos de origen.');
@@ -78,6 +79,7 @@ export const migrateData = async (hostDestino, portDestino, userDestino, passwor
       password: passwordDestino,
       database: databaseDestino
     };
+    console.log('configDestino: ', configDestino);
     connectionDestino = new Client(configDestino);
     await connectionDestino.connect();
     console.log('✅ Conectado a la base de datos de destino.');
