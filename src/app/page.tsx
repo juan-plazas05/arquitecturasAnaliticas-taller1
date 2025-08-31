@@ -77,22 +77,22 @@ function DataTable({ data }: { data: TableRow[] }) {
 
 type ConsultaCellProps = {
   title: string;
-  data: any[];
+  data: TableRow[];
   yearKey?: string;
   columns: { key: string; label: string }[];
   chartX: string;
   chartY: string;
   yearOptions: number[];
-  kpi?: (year: number, filtered: any[]) => React.ReactNode;
+  kpi?: (year: number, filtered: TableRow[]) => React.ReactNode;
 };
 
 function ConsultaCell({ title, data, yearKey = 'anio', columns, chartX, chartY, yearOptions, kpi }: ConsultaCellProps) {
-  const [selectedYear, setSelectedYear] = useState(yearOptions[0]);
+  const [selectedYear, setSelectedYear] = useState<number>(yearOptions[0]);
   // Convertir valores numéricos string a number para gráficas
-  const filtered = data.filter((row) => row[yearKey] === selectedYear);
-  const sorted = [...filtered].sort((a, b) => Number(b[chartY] ?? 0) - Number(a[chartY] ?? 0));
+  const filtered: TableRow[] = data.filter((row) => row[yearKey!] === selectedYear);
+  const sorted: TableRow[] = [...filtered].sort((a, b) => Number(b[chartY] ?? 0) - Number(a[chartY] ?? 0));
   const chartData = {
-    labels: sorted.map((row) => row[chartX]),
+    labels: sorted.map((row) => String(row[chartX])),
     datasets: [
       {
         label: chartY,
@@ -157,10 +157,10 @@ export default function Page() {
   const [consultasLoading, setConsultasLoading] = useState(false);
   const [consultasError, setConsultasError] = useState("");
   type ConsultasDataType = {
-    rowsMayorNumeroVuelos: any[];
-    rowsTotalDineroPrimerSemestre: any[];
-    rowsModeloMasVuelos: any[];
-    rowsTotalUsuariosPorCiudad: any[];
+    rowsMayorNumeroVuelos: TableRow[];
+    rowsTotalDineroPrimerSemestre: TableRow[];
+    rowsModeloMasVuelos: TableRow[];
+    rowsTotalUsuariosPorCiudad: TableRow[];
   } | null;
   const [consultasData, setConsultasData] = useState<ConsultasDataType>(null);
   // Validar datos de la DB destino
@@ -181,7 +181,7 @@ export default function Page() {
       const res = await fetch(`/api/getAnswers?${params}`);
       const data = await res.json();
       setConsultasData(data);
-    } catch (err) {
+    } catch {
       setConsultasError("Error al consultar los datos.");
     } finally {
       setConsultasLoading(false);

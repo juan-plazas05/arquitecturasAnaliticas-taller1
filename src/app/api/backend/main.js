@@ -21,22 +21,11 @@ import {
   getTotalUsuariosPorCiudad
 } from './sql';
 
-export const truncateTables = async (connectionDestino, hostDestino, portDestino, userDestino, passwordDestino, databaseDestino) => {
-  let connectionDb = connectionDestino;
+export const truncateTables = async (connectionDestino) => {
   try {
-    if (!connectionDb) {
-      connectionDb = new Client({
-        host: hostDestino,
-        port: portDestino,
-        user: userDestino,
-        password: passwordDestino,
-        database: databaseDestino
-      });
-      await connectionDb.connect();
-    }
     for (const query of queriesTruncateTables) {
       console.log(`🔄 Ejecutando consulta de truncado: ${query.split('IF EXISTS ')[1]}`);
-      await connectionDb.query(query);
+      await connectionDestino.query(query);
     }
   } catch (error) {
     console.error('❌ Error durante la creacion de tablas:', error);
